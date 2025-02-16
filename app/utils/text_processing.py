@@ -1,4 +1,4 @@
-from app.core.constants import INGREDIENTS
+from app.core.constants import INGREDIENTS, INDIRECT_ALLERGEN_SOURCES
 
 def get_evidence(text: str, allergen: str) -> list[str] | None:
     # Skip evidence gathering for 'none' category or empty allergen
@@ -20,8 +20,18 @@ def get_evidence(text: str, allergen: str) -> list[str] | None:
     evidence = []
     allergen_terms = INGREDIENTS[allergen]
     
-    # Check each section
-    evidence.extend(check_ingredients(parts['ingredients'], allergen_terms))
+    # Check direct ingredients
+    for ingredient in parts['ingredients']:
+        # Direct match
+        if any(term.lower() in ingredient.lower() for term in allergen_terms):
+            evidence.append(ingredient)
+        # Check indirect sources
+        indirect_evidence = check_indirect_allergens(ingredient)
+        for ind_allergen, ind_evidence in indirect_evidence:
+            if ind_allergen == allergen:
+                evidence.append(ind_evidence)
+    
+    # Check contains statements
     evidence.extend(check_contains_statements(parts['contains'], allergen_terms))
     evidence.extend(check_may_contain_statements(parts['may_contain'], allergen_terms))
     
@@ -77,4 +87,28 @@ def check_may_contain_statements(statements: list[str], allergen_terms: list[str
     return [
         f"May contain: {stmt}" for stmt in statements
         if any(term.lower() in stmt.lower() for term in allergen_terms)
-    ] 
+    ]
+
+def check_indirect_allergens(ingredient: str) -> list[tuple[str, str]]:
+    evidence = []
+    
+    # Check emulsifiers
+    if 'INS' in ingredient:
+        code = ingredient.split('INS')[1].strip().split(')')[0].strip()
+        if code in INDIRECT_ALLERGEN_SOURCES['emulsifiers']:
+            for allergen in INDIRECT_ALLERGEN_SOURCES['emulsifiers'][code]:
+                evidence.append((allergen, f"May contain {allergen} (from emulsifier {code})"))
+    
+    # Check flavorings
+    for flavor_type, allergens in INDIRECT_ALLERGEN_SOURCES['flavoring'].items():
+        if flavor_type.lower() in ingredient.lower():
+            for allergen in allergens:
+                evidence.append((allergen, f"May contain {allergen} (from {flavor_type})"))
+    
+    # Check starches
+    for starch, allergens in INDIRECT_ALLERGEN_SOURCES['starches'].items():
+        if starch.lower() in ingredient.lower():
+            for allergen in allergens:
+                evidence.append((allergen, f"May contain {allergen} (from {starch})"))
+                
+    return evidence 

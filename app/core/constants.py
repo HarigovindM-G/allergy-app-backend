@@ -30,7 +30,10 @@ INGREDIENTS = {
     'wheat': [
         'wheat', 'flour', 'bread crumbs', 'bran', 'semolina', 'couscous', 'pasta',
         'seitan', 'wheat germ', 'wheat starch', 'modified wheat starch', 'wheat protein',
-        'wheat gluten', 'durum wheat', 'whole wheat flour', 'wheat bran'
+        'wheat gluten', 'durum wheat', 'whole wheat flour', 'wheat bran',
+        'malt', 'malt extract', 'maltodextrin', 'hydrolyzed wheat protein',
+        'modified food starch', 'natural flavoring', 'artificial flavoring',
+        'caramel color', 'dextrin'
     ],
     'fish': [
         'fish', 'salmon', 'tuna', 'cod', 'anchovy', 'sardine', 'mackerel', 'fish sauce',
@@ -77,4 +80,20 @@ PRODUCT_TYPES = [
     ('preserved_food', ['sulfites', 'sodium sulfite'], ['preservatives', 'antioxidants']),
     ('celery_product', ['celery', 'celery salt'], ['seasonings', 'spices']),
     ('seafood_product', ['oyster sauce', 'clam juice'], ['seasonings', 'preservatives'])
-] 
+]
+
+# Add a new dictionary for indirect ingredients
+INDIRECT_ALLERGEN_SOURCES = {
+    'emulsifiers': {
+        'INS 471': ['dairy'],  # Mono and diglycerides can be from dairy
+        'INS 322': ['soy', 'egg'],  # Lecithin can be from soy or egg
+    },
+    'flavoring': {
+        'natural flavors': ['dairy', 'soy', 'wheat'],
+        'artificial flavors': ['dairy', 'soy', 'wheat']
+    },
+    'starches': {
+        'modified food starch': ['wheat'],
+        'food starch': ['wheat']
+    }
+} 
