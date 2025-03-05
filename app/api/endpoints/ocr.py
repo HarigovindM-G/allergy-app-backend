@@ -97,4 +97,4 @@ async def enhanced_ocr_v2(
         raise
     except Exception as e:
         logger.error(f"OCR Error: {str(e)}", exc_info=True)
-        raise HTTPException(500, f"Processing error: {str(e)}")   
+        raise HTTPException(500, f"Processing error: {str(e)}")
