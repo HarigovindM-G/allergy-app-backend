@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 def smart_preprocessing(image: np.ndarray) -> np.ndarray:
-    """Adaptive preprocessing based on image characteristics"""
+    """Adaptive preprocessing based on image characteristics with improved inversion and noise reduction"""
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
@@ -21,13 +21,12 @@ def smart_preprocessing(image: np.ndarray) -> np.ndarray:
     
     # Apply processing based on image quality
     if contrast < 40:  # Low contrast image
-        # CLAHE (Contrast Limited Adaptive Histogram Equalization)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         processed = clahe.apply(gray)
     else:
         processed = gray.copy()
     
-    # Use Otsu's thresholding for clean digital images
+    # Apply thresholding
     if brightness > 200 and contrast > 80:  # Likely clean digital text
         _, thresh = cv2.threshold(processed, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     else:  # For scanned docs/photos
@@ -37,9 +36,13 @@ def smart_preprocessing(image: np.ndarray) -> np.ndarray:
             cv2.THRESH_BINARY, 11, 2
         )
     
-    # Smart inversion detection
-    if np.mean(thresh) < 127:
+    # Improved inversion detection based on majority pixel value
+    num_white = cv2.countNonZero(thresh)  # Count white pixels (255)
+    if num_white <= (thresh.size / 2):    # If white pixels are minority, invert
         thresh = cv2.bitwise_not(thresh)
+    
+    # Noise reduction with median blur
+    thresh = cv2.medianBlur(thresh, 3)
     
     return thresh
 
@@ -94,4 +97,4 @@ async def enhanced_ocr_v2(
         raise
     except Exception as e:
         logger.error(f"OCR Error: {str(e)}", exc_info=True)
-        raise HTTPException(500, f"Processing error: {str(e)}")
+        raise HTTPException(500, f"Processing error: {str(e)}")   
