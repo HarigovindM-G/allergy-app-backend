@@ -43,3 +43,4 @@ scripts/generate_dataset.py
 *.h5
 *.model
 
+context.txt

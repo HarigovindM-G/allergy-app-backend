@@ -3,3 +3,10 @@ pytesseract
 pillow 
 fastapi 
 uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+sqlalchemy
+psycopg2-binary
+python-multipart
+pydantic[email]
+python-dotenv
