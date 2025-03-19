@@ -9,11 +9,23 @@ class AllergenPrediction(BaseModel):
     allergen: str
     confidence: float
     evidence: list[str] | None
+    is_user_allergen: Optional[bool] = None
 
 class AllergenResponse(BaseModel):
     allergens: list[AllergenPrediction]
     input_text: str
     threshold_used: float
+
+# Allergy schemas
+class AllergyItem(BaseModel):
+    id: str  # e.g., "milk"
+    name: str  # e.g., "Milk"
+    category: str  # e.g., "Dairy"
+    severity: Optional[str] = None  # e.g., "High", "Medium", "Low"
+    notes: Optional[str] = None
+
+class UserAllergiesUpdate(BaseModel):
+    allergies: List[AllergyItem]
 
 # Scan history schemas
 class ScanHistoryCreate(BaseModel):
@@ -42,14 +54,23 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    allergies: Optional[List[AllergyItem]] = None
 
 class UserResponse(UserBase):
     id: int
     is_active: bool
     created_at: datetime
+    allergies: Optional[List[AllergyItem]] = None
     
     class Config:
         from_attributes = True
+        
+    def model_dump(self, *args, **kwargs):
+        data = super().model_dump(*args, **kwargs)
+        # Ensure allergies is always an array
+        if data.get('allergies') is None:
+            data['allergies'] = []
+        return data
 
 # Token schemas
 class Token(BaseModel):

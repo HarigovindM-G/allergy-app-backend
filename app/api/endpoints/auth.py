@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
-from typing import Optional
+from typing import Optional, List
 
 from app.core.database import get_db
 from app.core.security import (
@@ -14,7 +14,7 @@ from app.core.security import (
     ALGORITHM
 )
 from app.models.user import User
-from app.models.schemas import UserCreate, UserResponse, Token, RefreshToken
+from app.models.schemas import UserCreate, UserResponse, Token, RefreshToken, UserAllergiesUpdate, AllergyItem
 from app.api.deps import get_current_active_user, get_token_from_header
 
 router = APIRouter()
@@ -47,6 +47,10 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         username=user_in.username,
         hashed_password=hashed_password
     )
+    
+    # Add allergies if provided
+    if hasattr(user_in, 'allergies') and user_in.allergies:
+        db_user.allergies = [allergy.dict() for allergy in user_in.allergies]
     
     db.add(db_user)
     db.commit()
@@ -83,6 +87,14 @@ def login(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
+    
+    # Initialize allergies if not present
+    if not hasattr(user, 'allergies') or user.allergies is None:
+        user.allergies = []
+        db.commit()
+    
+    # Print debug info
+    print(f"User allergies: {user.allergies}")
     
     # Create access and refresh tokens
     access_token = create_access_token(data={"sub": user.id})
@@ -137,11 +149,139 @@ def refresh_token(refresh_token_in: RefreshToken, db: Session = Depends(get_db))
     }
 
 @router.get("/me", response_model=UserResponse)
-def read_users_me(current_user: User = Depends(get_current_active_user)):
+def read_users_me(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """
     Get current user.
     """
+    # Make sure allergies is never None
+    if not hasattr(current_user, 'allergies') or current_user.allergies is None:
+        current_user.allergies = []
+        db.commit()
+        db.refresh(current_user)
+    
     return current_user
+
+@router.put("/me/allergies")
+def update_user_allergies(
+    allergies_update: UserAllergiesUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user's allergies.
+    """
+    # Initialize allergies if not present
+    if not hasattr(current_user, 'allergies') or current_user.allergies is None:
+        current_user.allergies = []
+    
+    # Update user allergies
+    try:
+        # Convert allergies to dicts for storage
+        allergies_data = []
+        for allergy in allergies_update.allergies:
+            allergy_dict = {
+                "id": allergy.id,
+                "name": allergy.name,
+                "category": allergy.category,
+                "severity": allergy.severity,
+                "notes": allergy.notes
+            }
+            allergies_data.append(allergy_dict)
+        
+        # Debug output
+        print(f"Updating allergies to: {allergies_data}")
+        
+        # Update the user model
+        current_user.allergies = allergies_data
+        db.commit()
+        db.refresh(current_user)
+        
+        return {"status": "success", "message": "Allergies updated successfully"}
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating allergies: {e}")
+        return {"status": "error", "message": f"Failed to update allergies: {str(e)}"}
+
+@router.get("/allergies/common", response_model=List[AllergyItem])
+def get_common_allergies():
+    """
+    Get list of common allergies that users can select from.
+    """
+    # Return a predefined list of common allergies
+    common_allergies = [
+        {
+            "id": "milk",
+            "name": "Milk",
+            "category": "Dairy",
+            "severity": None,
+            "notes": "Includes cow's milk and milk products"
+        },
+        {
+            "id": "egg",
+            "name": "Eggs",
+            "category": "Eggs",
+            "severity": None,
+            "notes": "Both egg whites and egg yolks"
+        },
+        {
+            "id": "peanut",
+            "name": "Peanuts",
+            "category": "Nuts",
+            "severity": None,
+            "notes": "Legume family, commonly used in many foods"
+        },
+        {
+            "id": "tree_nut",
+            "name": "Tree Nuts",
+            "category": "Nuts",
+            "severity": None,
+            "notes": "Includes almonds, walnuts, cashews, etc."
+        },
+        {
+            "id": "soy",
+            "name": "Soy",
+            "category": "Legumes",
+            "severity": None,
+            "notes": "Found in many processed foods"
+        },
+        {
+            "id": "wheat",
+            "name": "Wheat",
+            "category": "Grains",
+            "severity": None,
+            "notes": "Contains gluten"
+        },
+        {
+            "id": "shellfish",
+            "name": "Shellfish",
+            "category": "Seafood",
+            "severity": None,
+            "notes": "Includes shrimp, crab, lobster, etc."
+        },
+        {
+            "id": "fish",
+            "name": "Fish",
+            "category": "Seafood",
+            "severity": None,
+            "notes": "Various types of fish"
+        },
+        {
+            "id": "gluten",
+            "name": "Gluten",
+            "category": "Proteins",
+            "severity": None,
+            "notes": "Found in wheat, barley, rye"
+        },
+        {
+            "id": "sesame",
+            "name": "Sesame",
+            "category": "Seeds",
+            "severity": None,
+            "notes": "Seeds and oils"
+        }
+    ]
+    
+    return common_allergies
 
 @router.get("/debug-auth")
 async def debug_auth(request: Request, authorization: Optional[str] = Header(None)):
