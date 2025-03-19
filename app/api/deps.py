@@ -9,7 +9,7 @@ from app.models.schemas import TokenPayload
 from app.models.user import User
 
 # Configure OAuth2 with the correct token URL
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 # Alternative function to extract token from Authorization header
 async def get_token_from_header(authorization: Optional[str] = Header(None)) -> Optional[str]:
@@ -65,6 +65,43 @@ def get_current_user(
     if user is None:
         raise credentials_exception
     
+    return user
+
+def get_current_user_optional(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
+) -> Optional[User]:
+    """
+    Get the current user from the token if it exists and is valid.
+    Returns None if no token or token is invalid.
+    """
+    if not token:
+        return None
+    
+    try:
+        # Decode the token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Check if it's an access token
+        if payload.get("type") != "access":
+            return None
+        
+        # Get the user ID from the token
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
+            return None
+            
+        # Convert string user_id to integer
+        try:
+            user_id = int(user_id_str)
+        except ValueError:
+            return None
+        
+    except JWTError:
+        return None
+    
+    # Get the user from the database
+    user = db.query(User).filter(User.id == user_id).first()
     return user
 
 def get_current_active_user(

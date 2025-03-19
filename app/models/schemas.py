@@ -15,6 +15,26 @@ class AllergenResponse(BaseModel):
     input_text: str
     threshold_used: float
 
+# Scan history schemas
+class ScanHistoryCreate(BaseModel):
+    user_id: Optional[int] = None
+    product_name: Optional[str] = None
+    input_text: str
+    allergens: list[AllergenPrediction]
+    image_url: Optional[str] = None
+
+class ScanHistoryResponse(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    product_name: Optional[str] = None
+    input_text: str
+    allergens: list[AllergenPrediction]
+    image_url: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # User schemas
 class UserBase(BaseModel):
     email: EmailStr
