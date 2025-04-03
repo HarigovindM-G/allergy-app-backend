@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import allergens, ocr, auth, test, scan_history
+from app.api.endpoints import allergens, ocr, auth, test, scan_history, medicines
 
 router = APIRouter()
 
@@ -29,4 +29,10 @@ router.include_router(
     scan_history.router,
     prefix="/scan-history",
     tags=["scan-history"]
+) 
+
+router.include_router(
+    medicines.router,
+    prefix="/medicines",
+    tags=["medicines"]
 ) 

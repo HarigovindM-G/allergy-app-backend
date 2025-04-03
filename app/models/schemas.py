@@ -84,4 +84,28 @@ class TokenPayload(BaseModel):
     type: Optional[str] = None
 
 class RefreshToken(BaseModel):
-    refresh_token: str 
+    refresh_token: str
+
+# Medicine schemas
+class MedicineBase(BaseModel):
+    name: str
+    dosage: str
+    expiration_date: Optional[str] = None
+    notes: Optional[str] = None
+    reminder_enabled: Optional[bool] = False
+    reminder_time: Optional[str] = None
+
+class MedicineCreate(MedicineBase):
+    pass
+
+class MedicineUpdate(MedicineBase):
+    pass
+
+class MedicineResponse(MedicineBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True 

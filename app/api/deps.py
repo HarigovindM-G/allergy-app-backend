@@ -11,7 +11,6 @@ from app.models.user import User
 # Configure OAuth2 with the correct token URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
-# Alternative function to extract token from Authorization header
 async def get_token_from_header(authorization: Optional[str] = Header(None)) -> Optional[str]:
     """
     Extract token from Authorization header.
@@ -19,15 +18,21 @@ async def get_token_from_header(authorization: Optional[str] = Header(None)) -> 
     if not authorization:
         return None
     
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer":
+    try:
+        scheme, token = authorization.split(" ", 1)
+        if scheme.lower() != "bearer":
+            return None
+        
+        if not token or not isinstance(token, str):
+            return None
+            
+        return token.strip()
+    except Exception:
         return None
-    
-    return token
 
-def get_current_user(
+async def get_current_user(
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
+    authorization: Optional[str] = Header(None)
 ) -> User:
     """
     Get the current user from the token.
@@ -37,6 +42,10 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    token = await get_token_from_header(authorization)
+    if not token:
+        raise credentials_exception
     
     try:
         # Decode the token
@@ -57,7 +66,11 @@ def get_current_user(
         except ValueError:
             raise credentials_exception
         
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Error: {str(e)}")  # Add logging
+        raise credentials_exception
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")  # Add logging
         raise credentials_exception
     
     # Get the user from the database
