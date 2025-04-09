@@ -9,9 +9,9 @@ class AllergenDetector:
         self.tfidf = joblib.load(VECTORIZER_PATH)
         self.mlb = joblib.load(LABEL_BINARIZER_PATH)
         
-        # Adjusted thresholds
-        self.primary_threshold = 0.45    # For direct ingredients
-        self.secondary_threshold = 0.35   # For "may contain" statements
+        # Adjusted thresholds - lowered for better detection of direct ingredients
+        self.primary_threshold = 0.35    # For direct ingredients
+        self.secondary_threshold = 0.25   # For "may contain" statements
 
     def detect(self, text: str) -> dict:
         X = self.tfidf.transform([text])
@@ -32,7 +32,8 @@ class AllergenDetector:
             if evidence:
                 # Direct ingredients or "Contains" statements
                 if any("Contains statement:" in e for e in evidence) or any(term.lower() in text.lower() for term in INGREDIENTS[label]):
-                    prob = min(prob * 1.2, 1.0)
+                    # Increase confidence for direct ingredient mentions
+                    prob = min(prob * 1.5, 1.0)  # Increased from 1.2 to 1.5
                     if prob >= primary_threshold:
                         allergen_predictions.append({
                             "allergen": label,

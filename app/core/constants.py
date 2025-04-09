@@ -71,6 +71,31 @@ INGREDIENTS = {
         'oyster', 'mussel', 'clam', 'scallop', 'octopus', 'squid', 'calamari',
         'abalone', 'snail', 'whelk', 'periwinkle', 'mollusc extract', 'oyster sauce',
         'clam juice', 'mollusc powder'
+    ],
+    'pineapple': [
+        'pineapple', 'pineapple chunks', 'pineapple juice', 'pineapple extract',
+        'pineapple concentrate', 'pineapple flavor', 'pineapple puree', 'pineapple powder',
+        'dried pineapple', 'canned pineapple', 'pineapple syrup'
+    ],
+    'mushroom': [
+        'mushroom', 'mushrooms', 'fungi', 'shiitake', 'button mushroom', 'portobello',
+        'cremini', 'oyster mushroom', 'enoki', 'maitake', 'mushroom extract',
+        'mushroom powder', 'dried mushrooms', 'mushroom concentrate'
+    ],
+    'chickpea': [
+        'chickpea', 'chickpeas', 'garbanzo beans', 'gram flour', 'besan', 'chana',
+        'chickpea flour', 'chickpea protein', 'chickpea extract', 'chickpea powder',
+        'chickpea concentrate', 'chickpea starch'
+    ],
+    'papaya': [
+        'papaya', 'papaya fruit', 'papaya extract', 'papaya enzyme', 'papain',
+        'papaya powder', 'papaya concentrate', 'papaya puree', 'papaya juice',
+        'dried papaya', 'papaya flavor'
+    ],
+    'tomato': [
+        'tomato', 'tomatoes', 'tomato paste', 'tomato puree', 'tomato sauce',
+        'tomato powder', 'tomato extract', 'tomato concentrate', 'sun-dried tomatoes',
+        'tomato juice', 'tomato flavor', 'tomato pulp'
     ]
 }
 
